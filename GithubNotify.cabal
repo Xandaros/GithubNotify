@@ -21,6 +21,7 @@ executable GithubNotify
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9
                      , http-conduit
+                     , http-types
                      , libnotify
                      , aeson
                      , text

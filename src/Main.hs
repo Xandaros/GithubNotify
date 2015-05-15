@@ -3,11 +3,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 -- ace755130ccb1e794dfb50234df9c1847f250530
 module Main where
 import Control.Applicative
 import Control.Concurrent (threadDelay)
+import Control.Exception
 import Control.Lens
 import Control.Monad
 import Control.Monad.Reader
@@ -18,10 +20,15 @@ import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy.Char8 as BL8
 import Data.Maybe
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import Libnotify
 import Network.HTTP.Conduit
+import Network.HTTP.Types.Status
 
 import Config
+
+instance Show ((->) a b) where
+    show _ = "Function"
 
 data User = User
     { _userLogin :: T.Text
@@ -31,7 +38,6 @@ data User = User
     , _userTyp :: T.Text
     , _userSite_admin :: Bool
     } deriving (Show)
-makeFields ''User
 
 instance FromJSON User where
     parseJSON (Object v) = User <$> v .: "login"
@@ -46,7 +52,6 @@ data Subject = Subject
     { _subjectTitle :: T.Text
     , _subjectTyp :: T.Text
     } deriving (Show)
-makeFields ''Subject
 
 instance FromJSON Subject where
     parseJSON (Object v) = Subject <$> v .: "title"
@@ -54,7 +59,7 @@ instance FromJSON Subject where
     parseJSON _ = mzero
 
 data Repository = Repository
-    { _repositoryIdentifier :: T.Text
+    { _repositoryIdentifier :: Int
     , _repositoryOwner :: User
     , _repositoryName :: T.Text
     , _repositoryFull_name :: T.Text
@@ -62,7 +67,6 @@ data Repository = Repository
     , _repositoryPrivate :: Bool
     , _repositoryFork :: Bool
     } deriving (Show)
-makeFields ''Repository
 
 instance FromJSON Repository where
     parseJSON (Object v) = Repository <$> v .: "id"
@@ -75,15 +79,14 @@ instance FromJSON Repository where
     parseJSON _ = mzero
 
 data GNotification = GNotification
-    { _notificationIdentifier :: T.Text
-    , _notificationRepository :: Repository
-    , _notificationSubject :: Subject
-    , _notificationReason :: Maybe T.Text
-    , _notificationUnread :: Bool
-    , _notificationUpdated_at :: Maybe T.Text
-    , _notificationLast_read_at :: Maybe T.Text
+    { _gNotificationIdentifier :: T.Text
+    , _gNotificationRepository :: Repository
+    , _gNotificationSubject :: Subject
+    , _gNotificationReason :: Maybe T.Text
+    , _gNotificationUnread :: Bool
+    , _gNotificationUpdated_at :: Maybe T.Text
+    , _gNotificationLast_read_at :: Maybe T.Text
     } deriving (Show)
-makeFields ''GNotification
 
 instance FromJSON GNotification where
     parseJSON (Object v) = GNotification <$> v .:  "id"
@@ -93,6 +96,11 @@ instance FromJSON GNotification where
                                          <*> v .:  "unread"
                                          <*> v .:? "updated_at"
                                          <*> v .:? "last_read_at"
+
+makeFields ''User
+makeFields ''Subject
+makeFields ''Repository
+makeFields ''GNotification
 
 newtype GithubNotify a = GithubNotify { unGithubNotify :: ReaderT Config IO a }
     deriving (Functor, Applicative, Monad, MonadIO, MonadReader Config)
@@ -108,6 +116,11 @@ mkRequest lastModified = do
            { requestHeaders = [ ("user-agent", "Xandaros")
                               , ("If-Modified-Since", lastModified)
                               ]
+           , checkStatus = \status headers cookies ->
+             let code = statusCode status
+             in  if code >= 200 && code < 300 || code == 304
+                 then Nothing
+                 else Just . toException $ StatusCodeException status headers cookies
            }
 
 main :: IO ()
@@ -119,18 +132,24 @@ main' lastNotifications manager = do
     req <- mkRequest lastNotifications
     res <- httpLbs req manager
     let headers = responseHeaders res
-    let body = responseBody res
-    let pollInterval = fromJust $ lookup "X-Poll-Interval" headers <|> Just "60" -- fromJust is safe
+        body = responseBody res
+        code = statusCode $ responseStatus res
 
-    let lastModified = fromJust $ lookup "Last-Modified" headers <|> Just lastNotifications -- fromJust is safe
+    let pollInterval = fromMaybe "60" $ lookup "X-Poll-Interval" headers
+        lastModified = fromMaybe lastNotifications $ lookup "Last-Modified" headers
+        remainingRateLimit = fromMaybe "unknown" $ lookup "X-RateLimit-Remaining" headers
+        gnotifications = fromMaybe [] $ decode body
 
-    liftIO $ print headers
-    liftIO $ putStrLn ""
-    liftIO $ BL8.putStrLn body
-    liftIO $ BS8.putStrLn $ "pollInterval: " <> pollInterval
-    liftIO $ BS8.putStrLn $ "lastModified: " <> lastModified
-    liftIO $ putStrLn ""
-    liftIO $ print (decode body :: Maybe [GNotification])
-    liftIO $ threadDelay (read (BS8.unpack pollInterval)*1000000)
+    unless (code == 304) $
+        liftIO $ mapM_ showGNotification gnotifications
+
+    liftIO $ do
+        putStrLn $ "Fetched notifications: " ++ (show . length $ gnotifications)
+        BS8.putStrLn $ "Remaining rate limit: " <> remainingRateLimit
+        putStrLn ""
+        threadDelay . (*1000000) . read . BS8.unpack $ pollInterval -- read is safe, as long as GitHub returns a number for X-Poll-Interval... FIXME
 
     main' lastModified manager
+
+showGNotification :: GNotification -> IO ()
+showGNotification gnotification = display_ (summary . T.unpack $ gnotification ^. subject . title)
