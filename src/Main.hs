@@ -27,9 +27,6 @@ import Network.HTTP.Types.Status
 
 import Config
 
-instance Show ((->) a b) where
-    show _ = "Function"
-
 data User = User
     { _userLogin :: T.Text
     , _userIdentifier :: Int
