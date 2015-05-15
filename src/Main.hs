@@ -33,8 +33,7 @@ runGithubNotify config gn = runReaderT (unGithubNotify gn) config
 
 mkRequest :: BS8.ByteString -> GithubNotify Request
 mkRequest lastModified = do
-    config <- ask
-    let tok = config ^. token
+    tok <- asks (view token)
     return (fromJust . parseUrl $ "https://api.github.com/notifications?access_token=" ++ tok) -- fromJust *should* be safe
            { requestHeaders = [ ("user-agent", "Xandaros")
                               , ("If-Modified-Since", lastModified)
