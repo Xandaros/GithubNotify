@@ -21,12 +21,20 @@ import qualified Data.Text.IO as T
 import Libnotify
 import Network.HTTP.Conduit
 import Network.HTTP.Types.Status
+import System.Console.GetOpt
+import System.Environment (getArgs)
 
 import Config
 import GNotification
 
 newtype GithubNotify a = GithubNotify { unGithubNotify :: ReaderT Config IO a }
     deriving (Functor, Applicative, Monad, MonadIO, MonadReader Config)
+
+data Flag = ConfigFile FilePath
+
+options :: [OptDescr Flag]
+options = [ Option ['c'] ["config"] (ReqArg ConfigFile "asdf") "Read from specified config file"
+          ]
 
 runGithubNotify :: Config -> GithubNotify a -> IO a
 runGithubNotify config gn = runReaderT (unGithubNotify gn) config
@@ -45,8 +53,29 @@ mkRequest lastModified = do
                  else Just . toException $ StatusCodeException status headers cookies
            }
 
+parseArgs :: [String] -> IO ([Flag], [String])
+parseArgs args = case getOpt Permute options args of
+    (flags, nonOptions, []) -> return (flags, nonOptions)
+    (_, _, errors)          -> ioError (userError (concat errors ++ usageInfo "" options))
+
+getConfigFile :: [Flag] -> Maybe FilePath
+getConfigFile [] = Nothing
+getConfigFile (flag:flags) = case flag of
+    ConfigFile fp -> Just fp
+    _             -> getConfigFile flags
+
 main :: IO ()
-main = withManager (lift . runGithubNotify defaultConfig . main' "")
+main = do
+    (flags, nonOptions) <- getArgs >>= parseArgs
+
+    configFile <- case getConfigFile flags of
+        Just fp -> return fp
+        Nothing -> ioError $ userError $ "No config file(-c) specified.\n" ++ usageInfo "" options
+
+    config <- readConfigFile "/home/xandaros/workspace/GithubNotify/githubnotify.cfg"
+    case config of
+        Nothing   -> error "Unable to read config file"
+        Just conf -> withManager (lift . runGithubNotify conf . main' "")
 
 -- TODO: Cleanup
 main' :: BS8.ByteString -> Manager -> GithubNotify ()
@@ -54,13 +83,13 @@ main' lastNotifications manager = do
     req <- mkRequest lastNotifications
     res <- httpLbs req manager
     let headers = responseHeaders res
-        body = responseBody res
-        code = statusCode $ responseStatus res
+        body    = responseBody res
+        code    = statusCode $ responseStatus res
 
-    let pollInterval = fromMaybe "60" $ lookup "X-Poll-Interval" headers
-        lastModified = fromMaybe lastNotifications $ lookup "Last-Modified" headers
-        remainingRateLimit = fromMaybe "unknown" $ lookup "X-RateLimit-Remaining" headers
-        gnotifications = fromMaybe [] $ decode body
+    let pollInterval       = fromMaybe "60"              $ lookup "X-Poll-Interval" headers
+        lastModified       = fromMaybe lastNotifications $ lookup "Last-Modified" headers
+        remainingRateLimit = fromMaybe "unknown"         $ lookup "X-RateLimit-Remaining" headers
+        gnotifications     = fromMaybe []                $ decode body
 
     unless (code == 304) $
         liftIO $ mapM_ showGNotification gnotifications

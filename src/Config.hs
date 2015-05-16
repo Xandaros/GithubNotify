@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -7,10 +8,20 @@
 module Config where
 
 import Control.Lens
+import Control.Monad
+import Data.Aeson
+import qualified Data.ByteString.Lazy.Char8 as BL8
+import Data.Monoid
 
 data Config = Config
     { _configToken :: String
     } deriving (Show)
+
+instance FromJSON Config where
+    parseJSON (Object v) = Config <$> v .: "token"
+    parseJSON _ = mzero
+
 makeFields ''Config
 
-defaultConfig = Config "ace755130ccb1e794dfb50234df9c1847f250530"
+readConfigFile :: FilePath -> IO (Maybe Config)
+readConfigFile path = decode <$> BL8.readFile path
