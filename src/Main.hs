@@ -2,7 +2,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
--- ace755130ccb1e794dfb50234df9c1847f250530
 module Main where
 import Control.Applicative
 import Control.Concurrent (threadDelay)
