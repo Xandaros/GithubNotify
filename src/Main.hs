@@ -74,4 +74,4 @@ main' lastNotifications manager = do
     main' lastModified manager
 
 showGNotification :: GNotification -> IO ()
-showGNotification gnotification = display_ (summary . T.unpack $ gnotification ^. subject . title)
+showGNotification gnotification = display_ ((summary . T.unpack $ gnotification ^. subject . title) <> (body . T.unpack $ gnotification ^. repository . full_name))
