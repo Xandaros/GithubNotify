@@ -71,7 +71,7 @@ main = do
         Just fp -> return fp
         Nothing -> ioError $ userError $ "No config file(-c) specified.\n" ++ usageInfo "" options
 
-    config <- readConfigFile "/home/xandaros/workspace/GithubNotify/githubnotify.cfg"
+    config <- readConfigFile configFile
     case config of
         Nothing   -> error "Unable to read config file"
         Just conf -> withManager (lift . runGithubNotify conf . main' "")
