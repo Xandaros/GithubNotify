@@ -3,7 +3,7 @@ A little tool that uses libnotify to tell you when you receive a new notificatio
 on GitHub.
 
 ### Usage
-./GitHubNotify -c <config-file>
+./github-notify -c <config-file>
 
 To use GithubNotify, simply open it as seen above, giving it the path to a config
 file.
