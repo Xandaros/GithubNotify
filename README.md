@@ -17,7 +17,7 @@ You will need the following packages to be able to build/run github-notify. If y
 
 ### Usage
 ```bash
-./github-notify -c <config-file>
+github-notify -c <config-file>
 ```
 
 To use GithubNotify, simply open it as seen above, giving it the path to a config
