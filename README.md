@@ -4,7 +4,7 @@ A lightweight tool built utilising libnotify to display existing / recent notifi
 ### Requirements
 A notification daemon is required, [dunst](https://www.archlinux.org/packages/?name=dunst) is recommended. This must be installed prior to using github-notify.
 
-You will need the following packages to be able to build/run github-notify. If you are building this from the AUR package: [github-notify](https://aur.archlinux.org/packages/github-notify/), these will be installed from the PKGBUILD.
+You will need the following packages to be able to build/run github-notify. If you are building this from the [AUR package](https://aur.archlinux.org/packages/github-notify/), these will be installed from the PKGBUILD.
 
 ####Run ( Required to build and run ) :
 * libnotify
