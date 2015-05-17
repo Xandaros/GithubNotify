@@ -25,7 +25,7 @@ executable GithubNotify-profiling
                      , libnotify
                      , aeson
                      , text
-                     , lens
+                     , lens ==4.9.1
                      , resourcet
                      , bytestring
                      , mtl
@@ -48,7 +48,7 @@ executable github-notify
                      , libnotify
                      , aeson
                      , text
-                     , lens
+                     , lens ==4.9.1
                      , resourcet
                      , bytestring
                      , mtl
