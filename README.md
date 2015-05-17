@@ -1,6 +1,5 @@
 ## GithubNotify
-A little tool that uses libnotify to tell you when you receive a new notification
-on GitHub.
+A lightweight tool built utilising libnotify to display existing / recent notifications for a given GitHub account. Accounts are configured using a JSON file containing a ['GitHub Access Token'](https://github.com/settings/tokens), see Config File section below.
 
 ### Requirements
 A notification daemon is required, [dunst](https://www.archlinux.org/packages/?name=dunst) is recommended. This must be installed prior to using github-notify.
