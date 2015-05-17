@@ -24,6 +24,7 @@ To use GithubNotify, simply open it as seen above, giving it the path to a confi
 file.
 
 ### Config File
+**Note: Only 'notifications' permission is required when creating your token.**
 The config file contains a JSON Object, whose only required field is "token".
 Set it to your [Personal Access Token](https://github.com/settings/tokens) like so:
 ```bash
