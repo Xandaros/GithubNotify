@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Main where
 import Control.Applicative
@@ -25,9 +24,7 @@ import System.Environment (getArgs)
 
 import GithubNotify.Config
 import GithubNotify.GNotification
-
-newtype GithubNotify a = GithubNotify { unGithubNotify :: ReaderT Config IO a }
-    deriving (Functor, Applicative, Monad, MonadIO, MonadReader Config)
+import GithubNotify.GithubNotify
 
 data Flag = ConfigFile FilePath
 
@@ -35,12 +32,9 @@ options :: [OptDescr Flag]
 options = [ Option ['c'] ["config"] (ReqArg ConfigFile "asdf") "Read from specified config file"
           ]
 
-runGithubNotify :: Config -> GithubNotify a -> IO a
-runGithubNotify config gn = runReaderT (unGithubNotify gn) config
-
 mkRequest :: BS8.ByteString -> GithubNotify Request
 mkRequest lastModified = do
-    tok <- asks (view token)
+    tok <- authToken
     return (fromJust . parseUrl $ "https://api.github.com/notifications?access_token=" ++ tok) -- fromJust *should* be safe
            { requestHeaders = [ ("user-agent", "Xandaros")
                               , ("If-Modified-Since", lastModified)
@@ -103,7 +97,7 @@ main' lastNotifications manager = do
 
 showGNotification :: GNotification -> GithubNotify ()
 showGNotification gnotification = do
-    customTimeout <- asks (view customTimeout)
+    customTimeout <- notificationTimeout
     let customTimeout' = fromMaybe Default $ Custom <$> customTimeout
     liftIO $ display_ ((summary . T.unpack $ gnotification ^. subject    . title)
                        <> (body . T.unpack $ gnotification ^. repository . full_name)
