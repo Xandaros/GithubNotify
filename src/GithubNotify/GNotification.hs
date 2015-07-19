@@ -4,7 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module GNotification where
+module GithubNotify.GNotification where
 import Control.Lens
 import Control.Monad
 import Data.Aeson

@@ -5,7 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 
-module Config where
+module GithubNotify.Config where
 
 import Control.Lens
 import Control.Monad

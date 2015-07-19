@@ -23,8 +23,8 @@ import Network.HTTP.Types.Status
 import System.Console.GetOpt
 import System.Environment (getArgs)
 
-import Config
-import GNotification
+import GithubNotify.Config
+import GithubNotify.GNotification
 
 newtype GithubNotify a = GithubNotify { unGithubNotify :: ReaderT Config IO a }
     deriving (Functor, Applicative, Monad, MonadIO, MonadReader Config)
