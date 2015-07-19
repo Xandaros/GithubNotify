@@ -14,11 +14,13 @@ import qualified Data.ByteString.Lazy.Char8 as BL8
 import Data.Monoid
 
 data Config = Config
-    { _configToken :: String
+    { _configToken         :: String
+    , _configCustomTimeout :: Maybe Int
     } deriving (Show)
 
 instance FromJSON Config where
-    parseJSON (Object v) = Config <$> v .: "token"
+    parseJSON (Object v) = Config <$> v .:  "token"
+                                  <*> v .:? "timeout"
     parseJSON _ = mzero
 
 makeFields ''Config

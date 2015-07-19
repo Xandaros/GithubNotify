@@ -91,7 +91,7 @@ main' lastNotifications manager = do
         gnotifications     = fromMaybe []                $ decode body
 
     unless (code == 304) $
-        liftIO $ mapM_ showGNotification gnotifications
+        mapM_ showGNotification gnotifications
 
     liftIO $ do
         putStrLn $ "Fetched notifications: " ++ (show . length $ gnotifications)
@@ -101,5 +101,11 @@ main' lastNotifications manager = do
 
     main' lastModified manager
 
-showGNotification :: GNotification -> IO ()
-showGNotification gnotification = display_ ((summary . T.unpack $ gnotification ^. subject . title) <> (body . T.unpack $ gnotification ^. repository . full_name))
+showGNotification :: GNotification -> GithubNotify ()
+showGNotification gnotification = do
+    customTimeout <- asks (view customTimeout)
+    let customTimeout' = fromMaybe Default $ Custom <$> customTimeout
+    liftIO $ display_ ((summary . T.unpack $ gnotification ^. subject    . title)
+                       <> (body . T.unpack $ gnotification ^. repository . full_name)
+                       <> (timeout customTimeout')
+                       )
