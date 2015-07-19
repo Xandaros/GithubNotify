@@ -27,9 +27,12 @@ import GithubNotify.GNotification
 import GithubNotify.GithubNotify
 
 data Flag = ConfigFile FilePath
+          | NoPrefetch
+          deriving (Eq)
 
 options :: [OptDescr Flag]
 options = [ Option ['c'] ["config"] (ReqArg ConfigFile "asdf") "Read from specified config file"
+          , Option ['n'] ["no-prefetch"] (NoArg NoPrefetch) "Do not display any notifications present at startup"
           ]
 
 mkRequest :: BS8.ByteString -> GithubNotify Request
@@ -68,11 +71,14 @@ main = do
     config <- readConfigFile configFile
     case config of
         Nothing   -> error "Unable to read config file"
-        Just conf -> withManager (lift . runGithubNotify conf . main' "")
+        Just conf -> withManager (lift . runGithubNotify conf . main' flags "")
+
+main' :: [Flag] -> BS8.ByteString -> Manager -> GithubNotify ()
+main' = main'' True
 
 -- TODO: Cleanup
-main' :: BS8.ByteString -> Manager -> GithubNotify ()
-main' lastNotifications manager = do
+main'' :: Bool -> [Flag] -> BS8.ByteString -> Manager -> GithubNotify ()
+main'' first flags lastNotifications manager = do
     req <- mkRequest lastNotifications
     res <- httpLbs req manager
     let headers = responseHeaders res
@@ -85,7 +91,8 @@ main' lastNotifications manager = do
         gnotifications     = fromMaybe []                $ decode body
 
     unless (code == 304) $
-        mapM_ showGNotification gnotifications
+        unless (first && NoPrefetch `elem` flags) $
+            mapM_ showGNotification gnotifications
 
     liftIO $ do
         putStrLn $ "Fetched notifications: " ++ (show . length $ gnotifications)
@@ -93,7 +100,7 @@ main' lastNotifications manager = do
         putStrLn ""
         threadDelay . (*1000000) . read . BS8.unpack $ pollInterval -- read is safe, as long as GitHub returns a number for X-Poll-Interval... FIXME
 
-    main' lastModified manager
+    main'' False flags lastModified manager
 
 showGNotification :: GNotification -> GithubNotify ()
 showGNotification gnotification = do
