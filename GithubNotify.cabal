@@ -5,7 +5,7 @@ name:                GithubNotify
 version:             0.1.0.0
 synopsis:            A Notification daemon for GitHub
 -- description:         
-license:             AllRightsReserved
+license:             BSD2
 license-file:        LICENSE
 author:              Martin Zeller
 maintainer:          mz.bremerhaven@gmail.com
