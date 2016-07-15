@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                GithubNotify
-version:             0.1.0.0
+version:             0.1.2.0
 synopsis:            A Notification daemon for GitHub
 -- description:         
 license:             BSD2
@@ -19,13 +19,13 @@ executable GithubNotify-profiling
   main-is:             Main.hs
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.8 && <4.9
+  build-depends:       base >= 4.8 && <4.10
                      , http-conduit
                      , http-types
                      , libnotify
                      , aeson
                      , text
-                     , lens ==4.9.1
+                     , lens >=4.10
                      , resourcet
                      , bytestring
                      , mtl
@@ -42,13 +42,13 @@ executable github-notify
   main-is:             Main.hs
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.8 && <4.9
+  build-depends:       base >=4.8 && <4.10
                      , http-conduit
                      , http-types
                      , libnotify
                      , aeson
                      , text
-                     , lens ==4.9.1
+                     , lens >=4.10
                      , resourcet
                      , bytestring
                      , mtl
