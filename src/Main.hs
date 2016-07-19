@@ -38,7 +38,7 @@ options = [ Option ['c'] ["config"] (ReqArg ConfigFile "asdf") "Read from specif
 mkRequest :: BS8.ByteString -> GithubNotify Request
 mkRequest lastModified = do
     tok <- authToken
-    return (fromJust . parseUrl $ "https://api.github.com/notifications?access_token=" ++ tok) -- fromJust *should* be safe
+    return (fromJust . parseRequest $ "https://api.github.com/notifications?access_token=" ++ tok) -- fromJust *should* be safe
            { requestHeaders = [ ("user-agent", "Xandaros")
                               , ("If-Modified-Since", lastModified)
                               ]
