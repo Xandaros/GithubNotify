@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                GithubNotify
-version:             0.1.2.0
+version:             0.1.2.1
 synopsis:            A Notification daemon for GitHub
 -- description:         
 license:             BSD2
