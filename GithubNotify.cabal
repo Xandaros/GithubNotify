@@ -20,7 +20,7 @@ executable GithubNotify-profiling
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >= 4.8 && <4.10
-                     , http-conduit
+                     , http-conduit <=2.1.11
                      , http-types
                      , libnotify
                      , aeson
